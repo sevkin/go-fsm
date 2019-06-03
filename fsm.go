@@ -28,7 +28,7 @@ type (
 	}
 
 	// Handler is a transition handler
-	// when retuns !nil transition failed, state unchanged
+	// when returns !nil transition failed, state unchanged
 	Handler func() error
 
 	// InputError when call Do
