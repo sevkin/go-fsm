@@ -1,4 +1,4 @@
-module github.com/sevkin/fsm
+module github.com/sevkin/go-fsm
 
 go 1.12
 

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/sevkin/fsm"
+	"github.com/sevkin/go-fsm"
 )
 
 func open() error {

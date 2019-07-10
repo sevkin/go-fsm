@@ -1,6 +1,6 @@
-[![LICENSE](https://img.shields.io/github/license/sevkin/fsm.svg?color=orange)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/sevkin/fsm)](https://goreportcard.com/report/github.com/sevkin/fsm)
-[![Godocs](https://img.shields.io/badge/golang-documentation-blue.svg)](https://godoc.org/github.com/sevkin/fsm)
+[![LICENSE](https://img.shields.io/github/license/sevkin/go-fsm.svg?color=orange)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/sevkin/go-fsm)](https://goreportcard.com/report/github.com/sevkin/go-fsm)
+[![Godocs](https://img.shields.io/badge/golang-documentation-blue.svg)](https://godoc.org/github.com/sevkin/go-fsm)
 
 # Finite State Machine library for Golang
 
