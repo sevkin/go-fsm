@@ -74,10 +74,8 @@ func (fsm *FSM) on(input Input, current, next State, handler Handler) error {
 	s, found := t.currents[current]
 	if !found {
 		s = &state{
-			next: next,
-		}
-		if handler != nil {
-			s.handler = handler
+			next:    next,
+			handler: handler,
 		}
 	} else {
 		return &StateError{
