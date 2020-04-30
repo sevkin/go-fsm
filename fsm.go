@@ -2,6 +2,7 @@
 package fsm
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -11,6 +12,20 @@ type (
 
 	// Input event
 	Input int
+
+	// Handler is a transition handler
+	// when returns !nil transition failed, state unchanged
+	Handler func() error
+
+	// Transition record
+	Transition struct {
+		Input         Input
+		Current, Next State
+		Handler       Handler
+	}
+
+	// Transitions table
+	Transitions []Transition
 
 	state struct {
 		next    State
@@ -27,17 +42,13 @@ type (
 		inputs map[Input]*transition
 	}
 
-	// Handler is a transition handler
-	// when returns !nil transition failed, state unchanged
-	Handler func() error
-
 	// InputError when call Do
 	InputError struct {
 		Input   Input
 		Current State
 	}
 
-	// StateError when call On (panic!)
+	// StateError when call New
 	StateError struct {
 		*InputError
 		Next State
@@ -57,11 +68,20 @@ func (e *StateError) Error() string {
 }
 
 // New returns new FSM instance
-func New(initial State) *FSM {
-	return &FSM{
-		State:  initial,
-		inputs: make(map[Input]*transition),
+func New(transitions Transitions) (*FSM, error) {
+	if len(transitions) > 0 {
+		fsm := &FSM{
+			State:  (transitions)[0].Current,
+			inputs: make(map[Input]*transition),
+		}
+		for _, t := range transitions {
+			if err := fsm.on(t.Input, t.Current, t.Next, t.Handler); err != nil {
+				return nil, err
+			}
+		}
+		return fsm, nil
 	}
+	return nil, errors.New("empty transitions")
 }
 
 func (fsm *FSM) on(input Input, current, next State, handler Handler) error {
@@ -89,20 +109,6 @@ func (fsm *FSM) on(input Input, current, next State, handler Handler) error {
 	t.currents[current] = s
 	fsm.inputs[input] = t
 	return nil
-}
-
-// On defines transition, panic if nondeterminictic
-func (fsm *FSM) On(input Input, current, next State, handler ...Handler) *FSM {
-	var err error
-	if len(handler) == 1 {
-		err = fsm.on(input, current, next, handler[0])
-	} else {
-		err = fsm.on(input, current, next, nil)
-	}
-	if err != nil {
-		panic(err)
-	}
-	return fsm
 }
 
 // Do pass input, call handler if present

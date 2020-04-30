@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/sevkin/go-fsm"
 )
@@ -28,18 +29,17 @@ func main() {
 		push
 	)
 
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
+	turnstile, err := fsm.New(fsm.Transitions{
+		{Input: coin, Current: locked, Next: unlocked, Handler: open},
+		{Input: coin, Current: unlocked, Next: unlocked, Handler: nil},
+		{Input: push, Current: locked, Next: locked, Handler: nil}, // comment to try unexpected input
+		// {push, locked, unlocked, nil},                              // uncomment to try nondeterministic transition
+		{Input: push, Current: unlocked, Next: locked, Handler: close},
+	})
 
-	turnstile := fsm.New(locked).
-		On(coin, locked, unlocked, open).
-		On(coin, unlocked, unlocked).
-		On(push, locked, locked). // comment to try unexpected input
-		// On(push, locked, unlocked). // uncomment to try nondeterministic transition
-		On(push, unlocked, locked, close)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	turnstile.Do(coin)
 	turnstile.Do(coin)

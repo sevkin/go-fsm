@@ -17,35 +17,39 @@ const (
 )
 
 func TestNonDeterministic(t *testing.T) {
+	turnstile, err := New(Transitions{
+		{coin, locked, unlocked, nil},
+		{coin, unlocked, unlocked, nil},
+		{push, locked, locked, nil},   // comment to try unexpected input
+		{push, locked, unlocked, nil}, // uncomment to try nondeterministic transition
+		{push, unlocked, locked, nil},
+	})
 
-	defer func() {
-		r := recover()
-		assert.NotNil(t, r)
-		assert.IsType(t, &StateError{}, r)
-		assert.Equal(t, push, r.(*StateError).Input)
-		assert.Equal(t, locked, r.(*StateError).Current)
-		assert.Equal(t, unlocked, r.(*StateError).Next)
-	}()
+	assert.Nil(t, turnstile)
 
-	New(locked).
-		On(coin, locked, unlocked).
-		On(coin, unlocked, unlocked).
-		On(push, locked, locked).   // comment to try unexpected input
-		On(push, locked, unlocked). // uncomment to try nondeterministic transition
-		On(push, unlocked, locked)
+	assert.NotNil(t, err)
+	assert.IsType(t, &StateError{}, err)
+	if serr, ok := err.(*StateError); ok {
+		assert.Equal(t, push, serr.Input)
+		assert.Equal(t, locked, serr.Current)
+		assert.Equal(t, unlocked, serr.Next)
+	}
 }
 
 func TestInput(t *testing.T) {
-	turnstile := New(locked).
-		On(coin, locked, unlocked).
-		On(coin, unlocked, unlocked).
-		On(push, locked, locked). // comment to try unexpected input
-		// On(push, locked, unlocked). // uncomment to try nondeterministic transition
-		On(push, unlocked, locked)
+	turnstile, err := New(Transitions{
+		{coin, locked, unlocked, nil},
+		{coin, unlocked, unlocked, nil},
+		{push, locked, locked, nil}, // comment to try unexpected input
+		// {push, locked, unlocked, nil}, // uncomment to try nondeterministic transition
+		{push, unlocked, locked, nil},
+	})
+
+	assert.Nil(t, err)
 
 	assert.Equal(t, locked, turnstile.State)
 
-	err := turnstile.Do(coin)
+	err = turnstile.Do(coin)
 	assert.Nil(t, err)
 	assert.Equal(t, unlocked, turnstile.State)
 
@@ -63,16 +67,19 @@ func TestInput(t *testing.T) {
 }
 
 func TestInputUnexpected(t *testing.T) {
-	turnstile := New(locked).
-		On(coin, locked, unlocked).
-		On(coin, unlocked, unlocked).
-		// On(push, locked, locked).  // comment to try unexpected input
-		// On(push, locked, unlocked). // uncomment to try nondeterministic transition
-		On(push, unlocked, locked)
+	turnstile, err := New(Transitions{
+		{coin, locked, unlocked, nil},
+		{coin, unlocked, unlocked, nil},
+		// {push, locked, locked, nil}, // comment to try unexpected input
+		// {push, locked, unlocked, nil}, // uncomment to try nondeterministic transition
+		{push, unlocked, locked, nil},
+	})
+
+	assert.Nil(t, err)
 
 	assert.Equal(t, locked, turnstile.State)
 
-	err := turnstile.Do(push)
+	err = turnstile.Do(push)
 	assert.NotNil(t, err)
 	assert.IsType(t, &InputError{}, err)
 	assert.Equal(t, push, err.(*InputError).Input)
@@ -84,15 +91,18 @@ func TestInputUnexpected(t *testing.T) {
 func TestTransition(t *testing.T) {
 	human := 0
 
-	turnstile := New(locked).
-		On(coin, locked, unlocked).
-		On(coin, unlocked, unlocked).
-		On(push, locked, locked). // comment to try unexpected input
-		// On(push, locked, unlocked). // uncomment to try nondeterministic transition
-		On(push, unlocked, locked, func() error {
+	turnstile, err := New(Transitions{
+		{coin, locked, unlocked, nil},
+		{coin, unlocked, unlocked, nil},
+		{push, locked, locked, nil}, // comment to try unexpected input
+		// {push, locked, unlocked, nil}, // uncomment to try nondeterministic transition
+		{push, unlocked, locked, func() error {
 			human++
 			return nil
-		})
+		}},
+	})
+
+	assert.Nil(t, err)
 
 	turnstile.Do(push)
 	turnstile.Do(coin)
@@ -103,16 +113,19 @@ func TestTransition(t *testing.T) {
 
 func TestTransitionFailed(t *testing.T) {
 
-	turnstile := New(locked).
-		On(coin, locked, unlocked, func() error {
+	turnstile, err := New(Transitions{
+		{coin, locked, unlocked, func() error {
 			return errors.New("invalid coin")
-		}).
-		On(coin, unlocked, unlocked).
-		On(push, locked, locked). // comment to try unexpected input
-		// On(push, locked, unlocked). // uncomment to try nondeterministic transition
-		On(push, unlocked, locked)
+		}},
+		{coin, unlocked, unlocked, nil},
+		{push, locked, locked, nil}, // comment to try unexpected input
+		// {push, locked, unlocked, nil}, // uncomment to try nondeterministic transition
+		{push, unlocked, locked, nil},
+	})
 
-	err := turnstile.Do(coin)
+	assert.Nil(t, err)
+
+	err = turnstile.Do(coin)
 	assert.NotNil(t, err)
 	assert.Equal(t, locked, turnstile.State)
 }
