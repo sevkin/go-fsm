@@ -64,8 +64,7 @@ func New(initial State) *FSM {
 	}
 }
 
-// On defines transition, panic if nondeterminictic
-func (fsm *FSM) On(input Input, current, next State, handler ...Handler) *FSM {
+func (fsm *FSM) on(input Input, current, next State, handler Handler) error {
 	t, found := fsm.inputs[input]
 	if !found {
 		t = &transition{
@@ -77,20 +76,34 @@ func (fsm *FSM) On(input Input, current, next State, handler ...Handler) *FSM {
 		s = &state{
 			next: next,
 		}
-		if len(handler) == 1 {
-			s.handler = handler[0]
-		} // TODO if len(handler) > 1 panic: too many handlers (non idiomatic)
+		if handler != nil {
+			s.handler = handler
+		}
 	} else {
-		panic(&StateError{
+		return &StateError{
 			InputError: &InputError{
 				Input:   input,
 				Current: current,
 			},
 			Next: next,
-		})
+		}
 	}
 	t.currents[current] = s
 	fsm.inputs[input] = t
+	return nil
+}
+
+// On defines transition, panic if nondeterminictic
+func (fsm *FSM) On(input Input, current, next State, handler ...Handler) *FSM {
+	var err error
+	if len(handler) == 1 {
+		err = fsm.on(input, current, next, handler[0])
+	} else {
+		err = fsm.on(input, current, next, nil)
+	}
+	if err != nil {
+		panic(err)
+	}
 	return fsm
 }
 
